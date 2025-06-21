@@ -89,7 +89,7 @@ client.on(Events.MessageCreate, async (message) => {
     await message.reply({
       content: '🔕 Translations are currently disabled for you.',
       components: [row],
-      ephemeral: true
+      flags: 64
     });
     return;
   }
@@ -132,7 +132,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: `✅ Translations are now **${!current ? 'enabled' : 'disabled'}** for you.`,
-      ephemeral: true
+      flags: 64
     });
     return;
   }
@@ -143,7 +143,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   if (!supportedLangs.includes(targetLang)) {
     await interaction.reply({
       content: '❌ Unsupported language.',
-      ephemeral: true
+      flags: 64
     });
     return;
   }
@@ -166,13 +166,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: `📘 ${translated}`,
-      ephemeral: true
+      flags: 64
     });
   } catch (err) {
     console.error(err);
     await interaction.reply({
       content: '❌ Translation failed.',
-      ephemeral: true
+      flags: 64
     });
   }
 });
