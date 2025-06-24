@@ -1,13 +1,5 @@
 # Discord Translation Bot
 
-![License: Non-Commercial](https://img.shields.io/badge/license-non--commercial-red)
-
-📄 License: Custom Non-Commercial License  
-Use permitted for personal and open-source projects only.  
-Commercial use requires prior agreement with Dorsium.
-
-👉 See `LICENSE` file for full terms.
-
 🌐 A Discord bot that allows users to translate messages into their own preferred languages (e.g. Hungarian 🇭🇺, Romanian 🇷🇴) using inline buttons. All translations are ephemeral — only visible to the user who requested them.
 
 ---
@@ -58,6 +50,16 @@ Then run:
 ```bash
 node index.js
 ```
+
+---
+
+![License: Non-Commercial](https://img.shields.io/badge/license-non--commercial-red)
+
+📄 License: Custom Non-Commercial License  
+Use permitted for personal and open-source projects only.  
+Commercial use requires prior agreement with Dorsium.
+
+👉 See `LICENSE` file for full terms.
 
 ---
 
