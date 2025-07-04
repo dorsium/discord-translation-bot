@@ -11,11 +11,8 @@ const {
 const axios = require('axios');
 const fs = require('fs');
 
-// 🧠 User-specific translation settings (userID → enabled: true/false)
 const userPrefs = new Map();
 const PREFS_FILE = './.prefs.json';
-
-// 🔧 Supported translation targets
 const supportedLangs = ['hu', 'ro'];
 
 const client = new Client({
@@ -31,7 +28,6 @@ client.once(Events.ClientReady, () => {
   console.log(`✅ Bot online: ${client.user.tag}`);
 });
 
-// 🔄 Load preferences from file
 if (fs.existsSync(PREFS_FILE)) {
   try {
     const raw = fs.readFileSync(PREFS_FILE, 'utf-8');
@@ -43,7 +39,6 @@ if (fs.existsSync(PREFS_FILE)) {
   }
 }
 
-// ♻️ Helper to build the Enable/Disable button
 function buildToggleButton(label) {
   return new ButtonBuilder()
     .setCustomId('toggle_prefs')
@@ -52,7 +47,6 @@ function buildToggleButton(label) {
     .setStyle(ButtonStyle.Secondary);
 }
 
-// ♻️ Helper to build the full button row
 function buildTranslationButtons() {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -74,54 +68,56 @@ function buildTranslationButtons() {
   );
 }
 
-// 🌍 Buttons on new message + check who has translation enabled
 client.on(Events.MessageCreate, async (message) => {
   if (message.author.bot) return;
 
   const userId = message.author.id;
 
-  // ⛔ Translations disabled → show only the Enable button
-  if (userPrefs.get(userId) === false) {
-    const row = new ActionRowBuilder().addComponents(
-      buildToggleButton('Enable')
-    );
+  const perms = message.channel.permissionsFor(client.user);
+  if (!perms?.has('SendMessages')) return;
+
+  try {
+    if (userPrefs.get(userId) === false) {
+      const row = new ActionRowBuilder().addComponents(buildToggleButton('Enable'));
+
+      await message.reply({
+        content: '🔕 Translations are currently disabled for you.',
+        components: [row],
+        flags: 64
+      });
+      return;
+    }
+
+    const row = buildTranslationButtons();
 
     await message.reply({
-      content: '🔕 Translations are currently disabled for you.',
-      components: [row],
-      flags: 64
+      content: '🌐 Translate this message:',
+      components: [row]
     });
-    return;
+  } catch (err) {
+    console.error(`❌ Failed to reply in #${message.channel.id}:`, err);
   }
-
-  // ✅ Translations enabled → show full button row
-  const row = buildTranslationButtons();
-
-  await message.reply({
-    content: '🌐 Translate this message:',
-    components: [row]
-  });
 });
 
-// 🎯 Interactions (button clicks)
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isButton()) return;
 
   const userId = interaction.user.id;
 
-  // ⛔ Hide = hide the translation
   if (interaction.customId === 'hide_translation') {
-    await interaction.deferUpdate();
-    await interaction.deleteReply();
+    try {
+      await interaction.deferUpdate();
+      await interaction.deleteReply();
+    } catch (err) {
+      console.error('❌ Failed to hide translation:', err);
+    }
     return;
   }
 
-  // ⚙️ Toggle = enable/disable translation
   if (interaction.customId === 'toggle_prefs') {
     const current = userPrefs.get(userId) ?? true;
     userPrefs.set(userId, !current);
 
-    // 💾 Save preferences to file
     try {
       const jsonData = JSON.stringify([...userPrefs], null, 2);
       fs.writeFileSync(PREFS_FILE, jsonData, 'utf-8');
@@ -130,14 +126,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.error('❌ Failed to save user preferences:', err);
     }
 
-    await interaction.reply({
-      content: `✅ Translations are now **${!current ? 'enabled' : 'disabled'}** for you.`,
-      flags: 64
-    });
+    try {
+      await interaction.reply({
+        content: `✅ Translations are now **${!current ? 'enabled' : 'disabled'}** for you.`,
+        flags: 64
+      });
+    } catch (err) {
+      console.error('❌ Failed to send toggle reply:', err);
+    }
+
     return;
   }
 
-  // 🌐 Translation
   const targetLang = interaction.customId.replace('translate_', '');
 
   if (!supportedLangs.includes(targetLang)) {
@@ -148,11 +148,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  const originalMessage = interaction.message.reference
-    ? await interaction.channel.messages.fetch(interaction.message.reference.messageId)
-    : interaction.message;
+  let textToTranslate = '';
 
-  const textToTranslate = originalMessage.content;
+  try {
+    let repliedMsg = null;
+    if (interaction.message.reference?.messageId) {
+      repliedMsg = await interaction.channel.messages.fetch(
+        interaction.message.reference.messageId
+      );
+    }
+    textToTranslate = repliedMsg?.content || interaction.message.content;
+  } catch (err) {
+    console.error('❌ Failed to fetch referenced message:', err);
+    textToTranslate = interaction.message.content;
+  }
 
   try {
     const response = await axios.get('https://api.mymemory.translated.net/get', {
@@ -169,7 +178,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       flags: 64
     });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Translation failed:', err);
     await interaction.reply({
       content: '❌ Translation failed.',
       flags: 64
