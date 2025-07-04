@@ -37,6 +37,7 @@
 git clone https://github.com/dorsium/discord-translation-bot.git
 cd discord-translation-bot
 npm install
+npm run build
 ```
 
 Create a .env file:
@@ -48,7 +49,7 @@ BOT_TOKEN=your-discord-bot-token
 Then run:
 
 ```bash
-node index.js
+npm start
 ```
 
 ---
