@@ -1,10 +1,15 @@
 import dotenv from 'dotenv';
 import {
-  ActionRowBuilder,
-  Client,
-  Events,
-  GatewayIntentBits,
-  Partials,
+   Client,
+   GatewayIntentBits,
+   Partials,
+   Events,
+   ChannelType,
+   TextChannel,
+   PermissionFlagsBits,
+   ActionRowBuilder,
+   ButtonBuilder,
+   MessageFlags,
 } from 'discord.js';
 import { loadPrefs, getPref, setPref } from './prefs';
 import { buildToggleButton, buildTranslationButtons } from './ui';
@@ -33,19 +38,26 @@ async function init() {
   client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) return;
 
-    const perms = message.channel.permissionsFor(client.user!);
-    if (!perms?.has('SendMessages')) return;
+    if (
+      !message.inGuild() ||
+      (message.channel?.type !== ChannelType.GuildText &&
+        message.channel?.type !== ChannelType.GuildAnnouncement)
+    )
+      return;
+
+    const perms = (message.channel as TextChannel).permissionsFor(client.user!);
+    if (!perms?.has(PermissionFlagsBits.SendMessages)) return;
 
     const userId = message.author.id;
     try {
       if (getPref(userId) === false) {
-        const row = new ActionRowBuilder().addComponents(
-          buildToggleButton('Enable')
-        );
+        const row = new ActionRowBuilder<ButtonBuilder>()
+          .addComponents(buildToggleButton('Enable'))
+          .toJSON();
         await message.reply({
           content: '🔕 Translations are currently disabled for you.',
           components: [row],
-          flags: 64,
+          flags: MessageFlags.SuppressEmbeds,
         });
         return;
       }
