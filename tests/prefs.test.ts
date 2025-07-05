@@ -1,7 +1,5 @@
 import { promises as fs } from 'fs';
-import { loadPrefs, getPref, setPref } from '../src/prefs';
-
-const PREFS_FILE = './.prefs.json';
+import { loadPrefs, getPref, setPref, PREFS_FILE } from '../src/prefs';
 
 describe('prefs', () => {
   afterEach(async () => {

@@ -1,6 +1,6 @@
 import { promises as fs } from 'fs';
 
-const PREFS_FILE = './.prefs.json';
+export const PREFS_FILE = './.prefs.json';
 
 export type UserPrefs = Map<string, boolean>;
 
